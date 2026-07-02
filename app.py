@@ -3,11 +3,8 @@ from datetime import date, datetime
 from gtts import gTTS
 import base64
 import io
-import speech_recognition as sr
-from streamlit_mic_recorder import mic_recorder
-from pydub import AudioSegment
 
-# --- 1. CẤU HÌNH GIAO DIỆN & STYLE CSS NÂNG CAO ---
+# --- 1. CẤU HÌNH GIAO DIỆN & STYLE CSS ---
 st.set_page_config(page_title="AI Virtual Assistant", page_icon="🤖", layout="centered")
 
 st.markdown("""
@@ -17,57 +14,30 @@ st.markdown("""
         font-family: 'Inter', sans-serif; font-weight: 800; font-size: 2.8rem;
         background: linear-gradient(45deg, #FF4B4B, #4A90E2, #11998e);
         -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-align: center;
+        margin-bottom: 0px;
     }
     .subtitle { text-align: center; color: #7d7d7d; font-size: 1.1rem; margin-bottom: 2rem; }
     .stChatMessage { border-radius: 15px; padding: 1rem; margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
-    
-    .mic-box {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin: 20px 0;
-    }
-    div[data-testid="stMarkdownContainer"] + div button {
-        background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%) !important;
-        color: white !important;
-        border: none !important;
-        width: 90px !important;
-        height: 90px !important;
-        border-radius: 50% !important;
-        font-weight: bold !important;
-        font-size: 24px !important;
-        box-shadow: 0 0 20px rgba(255, 75, 43, 0.6) !important;
-        transition: all 0.3s ease-in-out !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-    }
-    div[data-testid="stMarkdownContainer"] + div button:hover {
-        transform: scale(1.1) !important;
-        box-shadow: 0 0 30px rgba(255, 75, 43, 0.9) !important;
-        background: linear-gradient(135deg, #FF4B2B 0%, #FF416C 100%) !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<p class="title-gradient">ABI VIRTUAL ASSISTANT</p>', unsafe_allow_html=True)
-st.markdown('<p class="subtitle">Trợ lý ảo phiên bản Web Cloud (Hỗ trợ Giọng nói)</p>', unsafe_allow_html=True)
+st.markdown('<p class="subtitle">Trợ lý ảo thông minh phiên bản Web siêu mượt</p>', unsafe_allow_html=True)
 
-# --- 2. KHỞI TẠO BỘ NHỚ CHAT & TRẠNG THÁI ---
+# --- 2. KHỞI TẠO BỘ NHỚ CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! Click the glowing Microphone button below to talk to me!"}
+        {"role": "assistant", "content": "Hello! I am your web assistant. Type anything below to talk to me!"}
     ]
 if "audio_to_play" not in st.session_state:
     st.session_state.audio_to_play = None
-if "last_processed_audio_id" not in st.session_state:
-    st.session_state.last_processed_audio_id = None
 
 # --- 3. CÁC HÀM XỬ LÝ LÕI ---
 def get_suffix(d):
     return "th" if 11 <= d <= 13 else {1: "st", 2: "nd", 3: "rd"}.get(d % 10, "th")
 
 def get_robot_speak_b64(text):
+    """Chuyển văn bản thành âm thanh mã hóa để trình duyệt người dùng tự phát"""
     try:
         tts = gTTS(text=text, lang='en')
         fp = io.BytesIO()
@@ -105,64 +75,26 @@ for message in st.session_state.messages:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
-# --- 5. BỐ CỤC ĐIỀU KHIỂN & MICROPHONE ---
-st.write("---")
-st.markdown('<div class="mic-box">', unsafe_allow_html=True)
-
-audio_recorded = mic_recorder(
-    start_prompt="🎙️",
-    stop_prompt="🛑",
-    key='my_mic'
-)
-
-st.markdown('</div>', unsafe_allow_html=True)
-
-user_query = st.chat_input("Hoặc nhập tin nhắn bằng chữ ở đây...")
-final_user_text = None
-
-# Trường hợp gõ chữ bằng bàn phím
-if user_query:
-    final_user_text = user_query
-
-# Trường hợp dùng giọng nói và kiểm tra ID âm thanh tránh lặp lại
-if audio_recorded and 'bytes' in audio_recorded:
-    current_audio_id = id(audio_recorded['bytes'])
-    
-    if current_audio_id != st.session_state.last_processed_audio_id:
-        audio_bytes = audio_recorded['bytes']
-        
-        try:
-            sound = AudioSegment.from_file(io.BytesIO(audio_bytes))
-            wav_fp = io.BytesIO()
-            sound.export(wav_fp, format="wav")
-            wav_fp.seek(0)
-            
-            recognizer = sr.Recognizer()
-            with sr.AudioFile(wav_fp) as source:
-                audio_data = recognizer.record(source)
-                text_converted = recognizer.recognize_google(audio_data, language="en-US")
-                final_user_text = text_converted
-        except sr.UnknownValueError:
-            st.toast("Robot không nghe rõ, bạn nói lại nhé!", icon="🤔")
-        except Exception as e:
-            st.toast(f"Lỗi xử lý âm thanh: {e}", icon="⚠️")
-            
-        # Ghi lại ID âm thanh vừa xử lý xong vào bộ nhớ thay vì ép gán session_state bằng None
-        st.session_state.last_processed_audio_id = current_audio_id
+# --- 5. KHU VỰC ĐIỀU KHIỂN NHẬP LIỆU ---
+user_query = st.chat_input("Write a message to your assistant...")
 
 # --- 6. XỬ LÝ PHẢN HỒI ---
-if final_user_text:
-    st.session_state.messages.append({"role": "user", "content": final_user_text})
-    response_text = process_brain(final_user_text)
+if user_query:
+    # 1. Lưu và hiển thị câu hỏi của người dùng
+    st.session_state.messages.append({"role": "user", "content": user_query})
+    
+    # 2. Cho não bộ xử lý câu trả lời
+    response_text = process_brain(user_query)
     st.session_state.messages.append({"role": "assistant", "content": response_text})
     
+    # 3. Tạo file giọng nói nén bằng Base64 gửi về trình duyệt
     audio_b64 = get_robot_speak_b64(response_text)
     if audio_b64:
         st.session_state.audio_to_play = audio_b64
         
     st.rerun()
 
-# Tự động phát âm thanh nếu có dữ liệu mới
+# Trình phát nhạc ẩn tự động cất tiếng khi có dữ liệu mới
 if st.session_state.audio_to_play:
     audio_html = f"""
         <audio autoplay>
