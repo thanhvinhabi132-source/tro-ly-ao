@@ -27,7 +27,7 @@ st.markdown('<p class="subtitle">Trợ lý ảo thông minh phiên bản Web si�
 # --- 2. KHỞI TẠO BỘ NHỚ CHAT ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
-        {"role": "assistant", "content": "Hello! I am your web assistant. Type anything below to talk to me!"}
+        {"role": "assistant", "content": "Hello! I am abi. Type anything below to talk to me!"}
     ]
 if "audio_to_play" not in st.session_state:
     st.session_state.audio_to_play = None
@@ -50,11 +50,11 @@ def get_robot_speak_b64(text):
 def process_brain(user_input):
     you = user_input.lower().strip()
     responses = {
-        "hello": "Hello abi",
+        "hello": "Hello baby",
         "question": "Do you miss me, babe?",
         "yes": "me too",
         "no": "oh dear",
-        "bye": "Bye abiiiiii"
+        "bye": "Bye babe, have a safe flight"
     }
     
     robot_brain = next((val for key, val in responses.items() if key in you), None)
