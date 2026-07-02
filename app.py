@@ -53,13 +53,15 @@ st.markdown("""
 st.markdown('<p class="title-gradient">ABI VIRTUAL ASSISTANT</p>', unsafe_allow_html=True)
 st.markdown('<p class="subtitle">Trợ lý ảo phiên bản Web Cloud (Hỗ trợ Giọng nói)</p>', unsafe_allow_html=True)
 
-# --- 2. KHỞI TẠO BỘ NHỚ CHAT ---
+# --- 2. KHỞI TẠO BỘ NHỚ CHAT & TRẠNG THÁI ---
 if "messages" not in st.session_state:
     st.session_state.messages = [
         {"role": "assistant", "content": "Hello! Click the glowing Microphone button below to talk to me!"}
     ]
 if "audio_to_play" not in st.session_state:
     st.session_state.audio_to_play = None
+if "last_processed_audio_id" not in st.session_state:
+    st.session_state.last_processed_audio_id = None
 
 # --- 3. CÁC HÀM XỬ LÝ LÕI ---
 def get_suffix(d):
@@ -118,30 +120,35 @@ st.markdown('</div>', unsafe_allow_html=True)
 user_query = st.chat_input("Hoặc nhập tin nhắn bằng chữ ở đây...")
 final_user_text = None
 
+# Trường hợp gõ chữ bằng bàn phím
 if user_query:
     final_user_text = user_query
 
+# Trường hợp dùng giọng nói và kiểm tra ID âm thanh tránh lặp lại
 if audio_recorded and 'bytes' in audio_recorded:
-    audio_bytes = audio_recorded['bytes']
+    current_audio_id = id(audio_recorded['bytes'])
     
-    try:
-        sound = AudioSegment.from_file(io.BytesIO(audio_bytes))
-        wav_fp = io.BytesIO()
-        sound.export(wav_fp, format="wav")
-        wav_fp.seek(0)
+    if current_audio_id != st.session_state.last_processed_audio_id:
+        audio_bytes = audio_recorded['bytes']
         
-        recognizer = sr.Recognizer()
-        with sr.AudioFile(wav_fp) as source:
-            audio_data = recognizer.record(source)
-            text_converted = recognizer.recognize_google(audio_data, language="en-US")
-            final_user_text = text_converted
-    except sr.UnknownValueError:
-        st.toast("Robot không nghe rõ, bạn nói lại nhé!", icon="🤔")
-    except Exception as e:
-        st.toast(f"Lỗi xử lý âm thanh: {e}", icon="⚠️")
-        
-    if 'my_mic' in st.session_state:
-        st.session_state['my_mic'] = None
+        try:
+            sound = AudioSegment.from_file(io.BytesIO(audio_bytes))
+            wav_fp = io.BytesIO()
+            sound.export(wav_fp, format="wav")
+            wav_fp.seek(0)
+            
+            recognizer = sr.Recognizer()
+            with sr.AudioFile(wav_fp) as source:
+                audio_data = recognizer.record(source)
+                text_converted = recognizer.recognize_google(audio_data, language="en-US")
+                final_user_text = text_converted
+        except sr.UnknownValueError:
+            st.toast("Robot không nghe rõ, bạn nói lại nhé!", icon="🤔")
+        except Exception as e:
+            st.toast(f"Lỗi xử lý âm thanh: {e}", icon="⚠️")
+            
+        # Ghi lại ID âm thanh vừa xử lý xong vào bộ nhớ thay vì ép gán session_state bằng None
+        st.session_state.last_processed_audio_id = current_audio_id
 
 # --- 6. XỬ LÝ PHẢN HỒI ---
 if final_user_text:
@@ -155,7 +162,7 @@ if final_user_text:
         
     st.rerun()
 
-# Sửa lỗi gán giá trị None tại đây để chạy dứt điểm
+# Tự động phát âm thanh nếu có dữ liệu mới
 if st.session_state.audio_to_play:
     audio_html = f"""
         <audio autoplay>
