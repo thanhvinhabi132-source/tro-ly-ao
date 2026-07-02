@@ -21,14 +21,12 @@ st.markdown("""
     .subtitle { text-align: center; color: #7d7d7d; font-size: 1.1rem; margin-bottom: 2rem; }
     .stChatMessage { border-radius: 15px; padding: 1rem; margin-bottom: 0.8rem; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
     
-    /* CUSTOM DIỆN MẠO NÚT MICROPHONE SIÊU XỊN */
     .mic-box {
         display: flex;
         justify-content: center;
         align-items: center;
         margin: 20px 0;
     }
-    /* Biến nút bấm mặc định thành nút tròn phát sáng neon */
     div[data-testid="stMarkdownContainer"] + div button {
         background: linear-gradient(135deg, #FF416C 0%, #FF4B2B 100%) !important;
         color: white !important;
@@ -109,11 +107,11 @@ for message in st.session_state.messages:
 st.write("---")
 st.markdown('<div class="mic-box">', unsafe_allow_html=True)
 
-# Nút mic đã được ẩn chữ, chỉ giữ lại Icon để tạo hình tròn tối giản công nghệ
+# Ghi âm mic từ trình duyệt với key='my_mic'
 audio_recorded = mic_recorder(
     start_prompt="🎙️",
     stop_prompt="🛑",
-    key='mic'
+    key='my_mic'
 )
 
 st.markdown('</div>', unsafe_allow_html=True)
@@ -128,7 +126,6 @@ if audio_recorded and 'bytes' in audio_recorded:
     audio_bytes = audio_recorded['bytes']
     
     try:
-        # Giải pháp fix lỗi ValueError: Chuyển đổi định dạng raw bytes sang WAV chuẩn bằng pydub
         sound = AudioSegment.from_file(io.BytesIO(audio_bytes))
         wav_fp = io.BytesIO()
         sound.export(wav_fp, format="wav")
@@ -143,6 +140,10 @@ if audio_recorded and 'bytes' in audio_recorded:
         st.toast("Robot không nghe rõ, bạn nói lại nhé!", icon="🤔")
     except Exception as e:
         st.toast(f"Lỗi xử lý âm thanh: {e}", icon="⚠️")
+        
+    # LÝ DO FIX: Xóa sạch dữ liệu trong session_state của mic để tránh lặp lại khi rerun
+    if 'my_mic' in st.session_state:
+        st.session_state['my_mic'] = None
 
 # --- 6. XỬ LÝ PHẢN HỒI ---
 if final_user_text:
@@ -163,4 +164,4 @@ if st.session_state.audio_to_play:
         </audio>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
-    st.session_state.audio_to_play = None
+    st.session_state.audio_to_play =
