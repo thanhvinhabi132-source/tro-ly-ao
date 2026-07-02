@@ -107,7 +107,6 @@ for message in st.session_state.messages:
 st.write("---")
 st.markdown('<div class="mic-box">', unsafe_allow_html=True)
 
-# Ghi âm mic từ trình duyệt với key='my_mic'
 audio_recorded = mic_recorder(
     start_prompt="🎙️",
     stop_prompt="🛑",
@@ -141,7 +140,6 @@ if audio_recorded and 'bytes' in audio_recorded:
     except Exception as e:
         st.toast(f"Lỗi xử lý âm thanh: {e}", icon="⚠️")
         
-    # LÝ DO FIX: Xóa sạch dữ liệu trong session_state của mic để tránh lặp lại khi rerun
     if 'my_mic' in st.session_state:
         st.session_state['my_mic'] = None
 
@@ -157,6 +155,7 @@ if final_user_text:
         
     st.rerun()
 
+# Sửa lỗi gán giá trị None tại đây để chạy dứt điểm
 if st.session_state.audio_to_play:
     audio_html = f"""
         <audio autoplay>
@@ -164,4 +163,4 @@ if st.session_state.audio_to_play:
         </audio>
     """
     st.markdown(audio_html, unsafe_allow_html=True)
-    st.session_state.audio_to_play =
+    st.session_state.audio_to_play = None
