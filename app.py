@@ -54,7 +54,7 @@ def process_brain(user_input):
         "question": "Do you miss me, babe?",
         "yes": "me too",
         "no": "oh dear",
-        "bye": "Bye babe, have a safe flight"
+        "bye": "Bye babe, have a safe flight, Hanoi misses you <3"
     }
     
     robot_brain = next((val for key, val in responses.items() if key in you), None)
